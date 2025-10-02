@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.ollama.replicas }}
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+      - name: ollama
+        image: {{ .Values.ollama.image.repository }}:{{ .Values.ollama.image.tag }}
+        ports:
+        - containerPort: 11434
+        env:
+        - name: OLLAMA_NEW_ESTIMATES
+          value: "1"
+        - name: OLLAMA_NUM_PARALLEL
+          value: "2"
+        - name: OLLAMA_MAX_LOADED_MODELS
+          value: "2"
+        volumeMounts:
+        - name: ollama-storage
+          mountPath: /root/.ollama
+        resources:
+          requests:
+            memory: {{ .Values.ollama.resources.requests.memory | quote }}
+            cpu: {{ .Values.ollama.resources.requests.cpu | quote }}
+          limits:
+            memory: {{ .Values.ollama.resources.limits.memory | quote }}
+            cpu: {{ .Values.ollama.resources.limits.cpu | quote }}
+      - name: model-loader
+        image: {{ .Values.ollama.modelLoader.image.repository }}:{{ .Values.ollama.modelLoader.image.tag }}
+        env:
+        - name: MODEL_NAME
+          value: {{ .Values.ollama.modelLoader.modelName | quote }}
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "🔄 Waiting for ollama service to be ready..."
+          until curl -f http://localhost:11434/api/tags >/dev/null 2>&1; do
+            echo "⏳ Ollama not ready yet, waiting..."
+            sleep 5
+          done
+          echo "✅ Ollama service is ready!"
+
+          echo "🔍 Checking if model $MODEL_NAME is already available..."
+          if curl -s http://localhost:11434/api/tags | grep -q "$MODEL_NAME"; then
+            echo "🟢 Model $MODEL_NAME is already available"
+          else
+            echo "📥 Pulling model $MODEL_NAME via API..."
+            curl -X POST http://localhost:11434/api/pull \
+              -H "Content-Type: application/json" \
+              -d "{\"name\": \"$MODEL_NAME\"}" \
+              --no-buffer --show-error
+            echo "✅ Model $MODEL_NAME pull initiated!"
+          fi
+
+          echo "✅ Model loading complete! Keeping container alive..."
+          tail -f /dev/null
+        resources:
+          requests:
+            memory: {{ .Values.ollama.modelLoader.resources.requests.memory | quote }}
+            cpu: {{ .Values.ollama.modelLoader.resources.requests.cpu | quote }}
+          limits:
+            memory: {{ .Values.ollama.modelLoader.resources.limits.memory | quote }}
+            cpu: {{ .Values.ollama.modelLoader.resources.limits.cpu | quote }}
+      volumes:
+      - name: ollama-storage
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: ollama
+  ports:
+  - protocol: TCP
+    port: 11434
+    targetPort: 11434
+  type: ClusterIP

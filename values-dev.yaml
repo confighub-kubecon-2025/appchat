@@ -1,0 +1,6 @@
+namespace: appchat
+
+backend:
+  env:
+    chatTitle: "AI Chat Dev"
+

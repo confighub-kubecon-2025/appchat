@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: {{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}
+        ports:
+        - containerPort: 8080
+        env:
+        - name: OLLAMA_URL
+          value: {{ .Values.backend.env.ollamaUrl | quote }}
+        - name: OLLAMA_MODEL
+          value: {{ .Values.backend.env.ollamaModel | quote }}
+        - name: DATABASE_URL
+          value: {{ .Values.backend.env.databaseUrl | quote }}
+        - name: CHAT_TITLE
+          value: {{ .Values.backend.env.chatTitle | quote }}
+        - name: PORT
+          value: {{ .Values.backend.env.port | quote }}
+        - name: REGION
+          value: {{ .Values.backend.env.region | quote }}
+        - name: ROLE
+          value: {{ .Values.backend.env.role | quote }}
+        resources:
+          requests:
+            memory: {{ .Values.backend.resources.requests.memory | quote }}
+            cpu: {{ .Values.backend.resources.requests.cpu | quote }}
+          limits:
+            memory: {{ .Values.backend.resources.limits.memory | quote }}
+            cpu: {{ .Values.backend.resources.limits.cpu | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: backend
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: backend-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/enable-websockets: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+  namespace: {{ .Values.namespace }}
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: {{ .Values.backend.ingress.host }}
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port:
+              number: 8080

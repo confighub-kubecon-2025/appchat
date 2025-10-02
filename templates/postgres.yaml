@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: {{ .Values.namespace }}
+spec:
+  serviceName: "postgres"
+  replicas: {{ .Values.postgres.replicas }}
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: {{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}
+        env:
+        - name: POSTGRES_DB
+          value: {{ .Values.postgres.env.database | quote }}
+        - name: POSTGRES_USER
+          value: {{ .Values.postgres.env.user | quote }}
+        - name: POSTGRES_PASSWORD
+          value: {{ .Values.postgres.env.password | quote }}
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: {{ .Values.postgres.resources.requests.memory | quote }}
+            cpu: {{ .Values.postgres.resources.requests.cpu | quote }}
+          limits:
+            memory: {{ .Values.postgres.resources.limits.memory | quote }}
+            cpu: {{ .Values.postgres.resources.limits.cpu | quote }}
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+      namespace: {{ .Values.namespace }}
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: {{ .Values.postgres.storage.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: postgres
+  ports:
+  - protocol: TCP
+    port: 5432
+    targetPort: 5432
