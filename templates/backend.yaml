@@ -23,6 +23,8 @@ spec:
           value: {{ .Values.backend.env.ollamaUrl | quote }}
         - name: OLLAMA_MODEL
           value: {{ .Values.backend.env.ollamaModel | quote }}
+        - name: OLLAMA_ENABLED
+          value: {{ .Values.ollama.enabled | quote }}
         - name: DATABASE_URL
           value: {{ .Values.backend.env.databaseUrl | quote }}
         - name: CHAT_TITLE
