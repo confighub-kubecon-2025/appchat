@@ -3,6 +3,10 @@ namespace: appchat
 backend:
   ingress:
     host: www.appchat.cubby.bz
+  env:
+    chatTitle: "AI Chat"
+    region: "NA"
+    role: "prod"
 
 frontend:
   ingress:
