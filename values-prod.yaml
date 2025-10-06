@@ -1,1 +1,10 @@
 namespace: appchat
+
+backend:
+  ingress:
+    host: prod.local.cubby.bz
+
+frontend:
+  ingress:
+    host: prod.local.cubby.bz
+

@@ -1,6 +1,12 @@
 namespace: appchat
 
+frontend:
+  ingress:
+    host: dev.local.cubby.bz
+
 backend:
+  ingress:
+    host: dev.local.cubby.bz
   env:
     chatTitle: "AI Chat Dev"
 
