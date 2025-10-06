@@ -21,7 +21,7 @@ backend:
     region: "dev"
     role: "development"
   ingress:
-    host: base.local.cubby.bz
+    host: base.appchat.cubby.bz
 
 frontend:
   replicas: 1
@@ -36,7 +36,7 @@ frontend:
       memory: "200Mi"
       cpu: "500m"
   ingress:
-    host: base.local.cubby.bz
+    host: base.appchat.cubby.bz
 
 postgres:
   replicas: 1
