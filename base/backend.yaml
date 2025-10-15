@@ -33,6 +33,8 @@ spec:
           value: "dev"
         - name: ROLE
           value: "development"
+        - name: EXPERIMENTAL_FEATURE
+          value: "true"
         resources:
           requests:
             memory: "100Mi"
